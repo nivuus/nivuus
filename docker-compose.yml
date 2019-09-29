@@ -1,0 +1,19 @@
+# Copyright 2019 Allanic.me ISC License License
+# For the full copyright and license information, please view the LICENSE
+# file that was distributed with this source code.
+# Created by mallanic <maxime@allanic.me> at 18/08/2019
+
+version: "2"
+
+services:
+    script:
+        image: 'node'
+        privileged: true
+        user: 'root'
+        volumes:
+          - .:/opt/server:cached
+          - /dev/shm:/dev/shm
+        command: 'bash -c "apt update && apt install sudo apt-utils apt-transport-https -y && echo \"debconf debconf/frontend select Noninteractive\" | debconf-set-selections && npm install -g nodemon && cd /opt/server/ && nodemon -e js,css,json,html ./index.js"'
+        ports:
+          - 8082:80
+          - 32400:32400

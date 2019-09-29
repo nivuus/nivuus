@@ -1,0 +1,30 @@
+/*
+ * Copyright 2019 Allanic.me ISC License License
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ * Created by mallanic <maxime@allanic.me> at 07/08/2019
+ */
+
+body, html {
+    overflow: hidden;
+    max-height: 100vh;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-height: 100vh;
+    min-width: 100vw;
+}
+
+#content {
+    overflow: hidden;
+    position: relative;
+}
+
+.route-view {
+    max-height: 100%;
+    overflow: auto;
+    padding: 10px 20px;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "server-manager",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Maxime Allanic <maxime@allanic.me> (https://allanic.me)",
+  "license": "ISC",
+  "dependencies": {
+    "@uirouter/angularjs": "^1.0.22",
+    "angular": "^1.7.8",
+    "aria2": "^4.0.3",
+    "bootstrap": "^4.3.1",
+    "express": "^4.17.1",
+    "get-function-arguments": "^1.0.0",
+    "glob": "^7.1.4",
+    "jquery": "^3.4.1",
+    "lodash": "^4.17.15",
+    "q-native": "^1.0.1",
+    "socket.io": "^2.2.0",
+    "system-installer": "^1.1.0"
+  }
+}
