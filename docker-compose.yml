@@ -10,10 +10,13 @@ services:
         image: 'node'
         privileged: true
         user: 'root'
+        environment:
+          - FORCE_COLOR=1
+          - NODE_ENV=dev
         volumes:
           - .:/opt/server:cached
           - /dev/shm:/dev/shm
-        command: 'bash -c "apt update && apt install sudo apt-utils apt-transport-https -y && echo \"debconf debconf/frontend select Noninteractive\" | debconf-set-selections && npm install -g nodemon && cd /opt/server/ && nodemon -e js,css,json,html ./index.js"'
+        command: '/opt/server/install.sh'
         ports:
           - 8082:80
           - 32400:32400

@@ -1,0 +1,47 @@
+<!--
+Copyright 2019 Allanic.me ISC License License
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+Created by mallanic <maxime@allanic.me> at 30/09/2019
+-->
+
+<table class="table">
+    <tbody>
+        <tr ng-repeat="repository in repositories track by repository.id"
+            ng-click="show(repository)"
+            ng-console="repository">
+            <td ng-bind="repository.title"></td>
+            <td ng-bind="repository.description"></td>
+            <td>
+
+                <button type="button"
+                        class="btn btn-primary btn-sm"
+                        ng-if="!repository.installed"
+                        ng-click="install(repository)"
+                        ng-translate=".INSTALL"></button>
+
+                <button type="button"
+                        class="btn btn-danger btn-sm"
+                        ng-if="repository.installed"
+                        ng-click="remove(repository)"
+                        ng-translate=".REMOVE"></button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<script type="text/ng-template" id="repository.html">
+    <div class="modal-header">
+        <h3 class="modal-title" id="modal-title" ng-bind="repository.name"></h3>
+        <div class="d-flex flex-row justify-content-end align-items-center">
+            <h4 ng-bind="repository.owner.login"></h4>
+            <img ng-src="{{:: repository.owner.avatar_url }}" height="55px"/>
+        </div>
+    </div>
+    <div class="modal-body" id="modal-body">
+        <div ng-bind-html="repository.readme"></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary" type="button" ng-console ng-click="$close()">OK</button>
+    </div>
+</script>

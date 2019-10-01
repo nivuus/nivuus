@@ -5,6 +5,8 @@
  * Created by mallanic <maxime@allanic.me> at 04/09/2019
  */
 
+const $q = require('q-native');
+
 module.exports.arrayBufferToBase64 = function base64ArrayBuffer(arrayBuffer) {
   var base64 = ''
   var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -56,3 +58,8 @@ module.exports.arrayBufferToBase64 = function base64ArrayBuffer(arrayBuffer) {
 
   return base64
 };
+
+module.exports.rmDirectory = function (directory) {
+  let exec = require('child_process').exec
+  return $q.nfcall(exec, `rm -Rf '${directory}'`);
+}

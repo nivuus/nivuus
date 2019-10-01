@@ -6,9 +6,11 @@
  */
 
 const $fs = require('fs');
+const $path = require('path');
 const $glob = require('glob');
 const $q = require('q-native');
 const $lodash = require('lodash');
+const Git = require('nodegit');
 const $utils = require('./service/utils');
 const $installer = require('./service/utils/installer');
 const $runCommand = require('./service/utils/run-command');
@@ -34,13 +36,15 @@ module.exports = class {
     }
 
     load(name) {
+
         if (name) {
+            var matcher = name.match(/\/(([^\/]*)\/([^\/]*))$/);
             var api = new ModuleApi(require(name), name, this._injector, this);
-            this._modules[ name ] = api;
+            this._modules[ matcher[1] ] = api;
             return api.onLoaded;
         }
         var self = this;
-        var finder = `{${ this._modulePath },${ __dirname }/component}/!(*.old)`;
+        var finder = `{${ this._modulePath },${ __dirname }/component}/*/!(*.old)`;
 
         return $q.nfcall($glob, finder)
             .then((files) => {
@@ -59,12 +63,27 @@ module.exports = class {
         return $q.resolve();
     }
 
-    install(name) {
-
+    isInstalled(name) {
+        return !!this._modules[ name ];
     }
 
-    uninstall(name) {
+    install(repository) {
+        var self = this;
+        var matcher = repository.match(/([^\/]+)\/([^\/]+)/);
+        var namespacePath = $path.resolve(this._modulePath, matcher[1]);
+        if (!$fs.existsSync(namespacePath))
+            $fs.mkdirSync(namespacePath);
 
+        var modulePath = $path.resolve(this._modulePath, repository);
+        return Git.Clone(`https://github.com/${ repository }`, modulePath)
+            .then(() => {
+                return self.load(modulePath);
+            });
+    }
+
+    uninstall(repository) {
+        this.unload(repository);
+        return $utils.rmDirectory($path.resolve(this._modulePath, repository));
     }
 
     getJavascriptDeclaration(io) {
@@ -73,7 +92,9 @@ module.exports = class {
             var formatValue = ${Communicator.format};
             var translations =
             angular.module('default-app', [
-                'ui.router'
+                'ui.router',
+                'ui.bootstrap',
+                'ngTouch'
             ])
                 .config(function ($locationProvider) {
                     $locationProvider
@@ -123,7 +144,7 @@ module.exports = class {
             return promise.then(function () {
                 return $lodash.reduce($lodash.castArray(systemPackages), (promise, systemPackage) => {
                     return promise.then(function () {
-                        return $installer(systemPackage);
+                        return $installer.provideInstall(systemPackage);
                     });
                 }, $q.resolve());
             });

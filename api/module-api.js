@@ -53,16 +53,19 @@ module.exports = class {
 
                     };
 
-                    (${sessionService}).apply(self);
+
                     return {
-                        $get: function ($rootScope) {
+                        $get: function ($rootScope, $injector) {
                             self.$watchCollection = $rootScope.$watchCollection;
                             self.$watch = $rootScope.$watch;
-
+                            $injector.invoke(${sessionService}, self);
                             ${ communicatorDeclaration }
                             return self;
                         }
                     };
+                })
+                .run(function (${name}) {
+
                 })
             `;
         }));
@@ -185,10 +188,22 @@ module.exports = class {
 
     getStatics() {
         var self = this;
-        return $lodash.map(this._definition.statics, (staticFile) => {
+        return $lodash.map(this._definition.statics, (staticFile, key) => {
+            var httpPath;
+            var path;
+            if (typeof key === 'string') {
+                httpPath = key;
+                path = staticFile;
+            }
+            else {
+                httpPath = staticFile;
+                path = self.resolveFilePath(staticFile);
+            }
+
+
             return {
-                http: staticFile,
-                path: self.resolveFilePath(staticFile)
+                http: httpPath,
+                path: path
             };
         });
     }
@@ -197,7 +212,7 @@ module.exports = class {
         try {
             this._injector.invoke(controller, additionalService, scope);
         } catch (e) {
-            console.error(e);
+            $logger.error(e);
         }
     }
 

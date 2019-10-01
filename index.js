@@ -6,11 +6,14 @@
  */
 
 const Api = require('./api');
+const $logger = require('./api/service/utils/logger');
 
 // Load main
 const $api = new Api(__dirname + '/data');
 
 $api.load()
     .then(() => {
-        console.log('loaded');
-    }, console.error);
+        $logger.info('loaded');
+    }, (error) => {
+        $logger.error(error);
+    });

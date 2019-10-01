@@ -27,4 +27,15 @@ body, html {
     max-height: 100%;
     overflow: auto;
     padding: 10px 20px;
+    position: relative;
+}
+
+.nav, .pagination, .carousel, .card-title a {
+    cursor: pointer;
+}
+
+.modal, .modal-backdrop {
+    position: absolute;
+    height: 100%;
+    width: 100%;
 }

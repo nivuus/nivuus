@@ -7,6 +7,7 @@
 
 const $lodash = require('lodash');
 const $q = require('q-native');
+const $logger = require('./service/utils/logger');
 const _ = $lodash;
 
 module.exports = class Communicator {
@@ -17,10 +18,34 @@ module.exports = class Communicator {
     async getDeclaration(varBind, initialValues, defaultValues) {
         var self = this;
         var js = `
-            socket.emit('${this.id}', {
-                action: 'start',
-                value: ${initialValues}
-            });
+            var previousValue = {};
+            function emitAllValue(vars) {
+                Promise.all(_.map(vars, function (value, name) {
+                    if (name[0] != '$'
+                        && previousValue[name] !== vars[name]) {
+                        return parseValue(value)
+                            .then((value) => {
+                                return {
+                                    name: name,
+                                    value: value
+                                };
+                            });
+                    }
+                }))
+                    .then(function (args) {
+                        var data = {};
+                        _.forEach(args, function (arg) {
+                            if (arg)
+                                data[arg.name] = arg.value;
+                        });
+                        socket.emit('${this.id}', {
+                            action: 'start',
+                            value: data
+                        });
+                    });
+            }
+            emitAllValue(${initialValues});
+
             ${varBind}.$on('$destroy', function () {
                 socket.emit('${this.id}', {
                     action: 'end'
@@ -28,34 +53,34 @@ module.exports = class Communicator {
             });
 
             socket.on('connect', function () {
-                Promise.all(_.map(${varBind}, function (value, name) {
-                    if (name[0] != '$'
-                        && previousValue[name] !== ${varBind}[name]) {
-                        return parseValue(value);
-
-                    }
-                }))
-                    .then(function (args) {
-                        socket.emit('${this.id}', {
-                            action: 'start',
-                            value: args
-                        });
-                    });
+                emitAllValue(${varBind});
 
             })
 
             socket.on('${this.id}', function (data) {
-                if (data.action === 'set') {
+                if (data.action === 'set')
                     formatValue(data.value, data.type, data.name, socket, '${this.id}')
                         .then(function (value) {
                             ${varBind}[data.name] = value;
                             previousValue[data.name] = value;
                             ${varBind}.$apply();
                         });
+                else if (data.action === 'call') {
+                    Promise.all(_.map(data.arguments, (arg) => {
+                        return formatValue(arg.value, arg.type, arg.name, socket, self.id);
+                    }))
+                            .then((args) => {
+                                if (!${ varBind }[ data.name ])
+                                    return socket.emit(data.response, null);
+                                var result = ${ varBind }[ data.name ].apply(null, args);
+                                parseValue(result)
+                                    .then(function (result) {
+                                        socket.emit(data.response, result);
+                                    })
+
+                            });
                 }
             });
-
-            var previousValue = {};
 
             ${varBind}.$watchCollection(function () {
                 var d = {};
@@ -133,43 +158,57 @@ module.exports = class Communicator {
                         });
 
                 } catch (e) {
-                    console.error(e);
+                    $logger.error(e);
                 }
             }
         });
 
         socket.on(self.id, (data) => {
-            if (data.action === 'start') {
-                Promise.all($lodash.map(data.value, (value, name) => {
-                    if (!value)
-                        return;
-                    return module.exports.format(value, typeof value, name, socket, self.id)
-                        .then(function (value) {
-                            originalScope[ name ] = value;
-                        });
-                }));
-            }
-            if (data.action === 'call') {
-
-                Promise.all($lodash.map(data.arguments, (arg) => {
-                    return module.exports.format(arg.value, arg.type, arg.name, socket, self.id);
-                }))
-                    .then((args) => {
-                        var result = scope[ data.name ].apply(null, args);
-                        module.exports.parse(result)
-                            .then(function (result) {
-                                socket.emit(data.response, result);
-                            });
-                    });
-            }
-            else if (data.action === 'set') {
-                module.exports.format(data.value, data.type, data.name, socket, self.id)
-                    .then((value) => {
-                        originalScope[ data.name ] = value;
-                    });
-            }
+            self.dispatchEvents(data, originalScope, socket);
         });
         return scope;
+    }
+
+    dispatchEvents(data, scope, socket) {
+        var self = this;
+        if (!scope)
+            return;
+        if (data.action === 'start') {
+            Promise.all($lodash.map(data.value, (value, name) => {
+                if (!value || scope.hasOwnProperty(name))
+                    return;
+
+                return module.exports.format(value.value, value.type, name, socket, self.id)
+                    .then(function (value) {
+                        scope[ name ] = value;
+                    });
+            }));
+        }
+        else if (data.action === 'call') {
+            Promise.all($lodash.map(data.arguments, (arg) => {
+                return module.exports.format(arg.value, arg.type, arg.name, socket, self.id);
+            }))
+                .then((args) => {
+                    // test
+                    if (!scope[ data.name ])
+                        return socket.emit(data.response, null);
+                    //console.log('call', data.name, scope[ data.name ].toString());
+                    var result = scope[ data.name ].apply(null, args);
+                    module.exports.parse(result)
+                        .then(function (result) {
+                            socket.emit(data.response, result);
+                        })
+
+                })
+                .catch((error) => $logger.error(error));
+        }
+        else if (data.action === 'set') {
+            module.exports.format(data.value, data.type, data.name, socket, self.id)
+                .then((value) => {
+                    //console.log('set', data.name, value);
+                    scope[ data.name ] = value;
+                });
+        }
     }
 
     loadGlobalModule(io) {
@@ -194,7 +233,7 @@ module.exports = class Communicator {
                         });
 
                 } catch (e) {
-                    console.error(e);
+                    $logger.error(e);
                 }
             }
         });
@@ -202,25 +241,7 @@ module.exports = class Communicator {
         io.on('connection', function (socket) {
             sockets.push(socket);
             socket.on(self.id, (data) => {
-                if (data.action === 'call') {
-
-                    Promise.all($lodash.map(data.arguments, (arg) => {
-                        return module.exports.format(arg.value, arg.type, arg.name, socket, self.id);
-                    }))
-                        .then((args) => {
-                            var result = scope[ data.name ].apply(null, args);
-                            module.exports.parse(result)
-                                .then(function (result) {
-                                    socket.emit(data.response, result);
-                                });
-                        });
-                }
-                else if (data.action === 'set') {
-                    module.exports.format(data.value, data.type, data.name, socket, self.id)
-                        .then((value) => {
-                            originalScope[ data.name ] = value;
-                        });
-                }
+                self.dispatchEvents(data, originalScope, socket);
             });
             socket.on('disconnect', () => {
                 $lodash.remove(sockets, socket);
@@ -237,9 +258,7 @@ module.exports = class Communicator {
 
         socket.on(this.id, (data) => {
             if (data.action === 'start') {
-                originalScope = data.value;
-                if (!originalScope)
-                    originalScope = {};
+                originalScope = {};
                 originalScope.$on = (eventName, callback) => {
 
                 };
@@ -258,7 +277,7 @@ module.exports = class Communicator {
                                     })
 
                             } catch (e) {
-                                console.error(e);
+                                $logger.error(e);
                             }
                         }
                     });
@@ -267,43 +286,19 @@ module.exports = class Communicator {
                         onDestroy = destroy;
                     });
                 } catch (e) {
-                    console.error(e);
+                    $logger.error(e);
                 }
             }
-            else if (!scope)
-                return;
             else if (data.action === 'end') {
                 if (onDestroy)
                     onDestroy();
             }
-            else if (data.action === 'call') {
-                Promise.all($lodash.map(data.arguments, (arg) => {
-                    return module.exports.format(arg.value, arg.type, arg.name, socket, self.id);
-                }))
-                    .then((args) => {
-                        // test
-                        if (!scope[ data.name ])
-                            return socket.emit(data.response, null);
-                        var result = scope[ data.name ].apply(null, args);
-                        module.exports.parse(result)
-                            .then(function (result) {
-                                socket.emit(data.response, result);
-                            })
-
-                    });
-            }
-            else if (data.action === 'set') {
-                module.exports.format(data.value, data.type, data.name, socket, self.id)
-                    .then((value) => {
-                        originalScope[ data.name ] = value;
-                    });
-            }
-
+            self.dispatchEvents(data, originalScope, socket);
         });
     }
 }
 
-module.exports.parse = function parseValue(value) {
+function parseValue(value) {
     if (_.isFunction(value))
         return Promise.resolve({
             type: 'function'
@@ -334,8 +329,9 @@ module.exports.parse = function parseValue(value) {
         type: typeof value
     });
 };
+module.exports.parse = parseValue;
 
-module.exports.format = function formatValue(value, type, name, socket, namespace) {
+function formatValue(value, type, name, socket, namespace) {
     if (type === 'function')
         return Promise.resolve(function () {
             var args = Array.from(arguments);
@@ -376,3 +372,4 @@ module.exports.format = function formatValue(value, type, name, socket, namespac
 
     return Promise.resolve(value);
 };
+module.exports.format = formatValue;

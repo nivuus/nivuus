@@ -9,6 +9,9 @@
 var socket = io.connect('/');
 
 angular.module('default-app')
+    .config(function($sceProvider) {
+        $sceProvider.enabled(false);
+    })
     .directive('ngConsole', function () {
         return {
             scope: {
@@ -18,6 +21,16 @@ angular.module('default-app')
                 console.log($scope.ngConsole || $scope);
             }
         }
+    })
+    .directive('ngBindHtml', function () {
+        return {
+            scope: {
+                ngBindHtml: '='
+            },
+            link: function ($scope, $element) {
+                $element.html($scope.ngBindHtml);
+            }
+        };
     })
     .filter('humanize', function () {
         return function (value, type, precision) {
@@ -38,4 +51,8 @@ angular.module('default-app')
                 return (value / Math.pow(1024, Math.floor(number))).toFixed(2) + ' ' + units[ number ];
             }
         };
+    })
+    .run(function ($rootScope, $window) {
+        $rootScope.$window = $window;
+        console.log($window);
     });

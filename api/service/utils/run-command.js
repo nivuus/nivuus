@@ -6,7 +6,10 @@
  */
 
 const $systemInstaller = require('system-installer');
+const $childProcess = require('child_process');
 const $lodash = require('lodash');
+const $event = require('./event');
+const $logger = require('./logger').categorize('system-service');
 
 module.exports = function (command) {
     var env = {};
@@ -29,40 +32,29 @@ module.exports = function (command) {
     var args = command.match(/(?=\S)[^"\s]*(?:"[^\\"]*(?:\\[\s\S][^\\"]*)*"[^"\s]*)*/g);
     args = $lodash.map(args, (arg) => $lodash.trim(arg, '"\''));
     var command = args.shift().replace(/\s/g, '\\ ');
-    console.log($lodash.map(env, (v, k) => `${k}="${v}"`).join(' '), command, args.join(' '), );
     var output = '';
-    return new Promise((resolve, reject) => {
-        var result = require('child_process').spawn(command, args, { stdio: 'pipe' , env: env});
-        result.on('error', (err) => { return reject(Error(err)); });
-        result.stdout.on('data', function (data) { output += data.toString(); });
-        result.stderr.on('data', function (data) {
-            console.error(new Error(data.toString()));
-        });
-        resolve();
-        //result.on('close', function (code) { return resolve(output) });
-        result.on('exit', function (code) {
-            console.log(output);
-            console.log('exit', code, command);
-        });
+    $logger.info(`start ${ command }`);
+    var result = $childProcess.spawn(command, args, {
+        stdio: 'pipe',
+        env: env,
+        shell: true
+    });
+    result.on('error', (err) => {
+        $logger.error(new Error(`${command } ${err.toString()}`));
+    });
+    result.stdout.on('data', function (data) {
+        $logger.debug(command, data.toString().replace(/\n\s*\n/g, '\n'));
+        output += data.toString();
+    });
+    result.stderr.on('data', function (data) {
+        $logger.error(new Error(`${command } ${data.toString()}`));
+    });
+    //result.on('close', function (code) { return resolve(output) });
+    result.on('exit', function (code) {
+        $logger.debug(`${command} exit with ${code}`);
+    });
 
-
-        function exitHandler(options, exitCode) {
-            console.log('exit');
-            result.kill('SIGINT')
-            process.exit();
-        }
-
-        //do something when app is closing
-        process.on('exit', exitHandler.bind(null,{cleanup:true}));
-
-        //catches ctrl+c event
-        process.on('SIGINT', exitHandler.bind(null, {exit:true}));
-
-        // catches "kill pid" (for example: nodemon restart)
-        process.on('SIGUSR1', exitHandler.bind(null, {exit:true}));
-        process.on('SIGUSR2', exitHandler.bind(null, {exit:true}));
-
-        //catches uncaught exceptions
-        process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
+    $event.on('exit', () => {
+        result.kill();
     });
 };
