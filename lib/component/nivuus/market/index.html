@@ -1,0 +1,74 @@
+<!--
+Copyright 2019 Allanic.me ISC License License
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+Created by mallanic <maxime@allanic.me> at 30/09/2019
+-->
+
+<table class="table">
+    <tbody>
+        <tr ng-repeat="repository in repositories track by repository.id" ng-console>
+            <td ng-bind="repository.title"
+                ng-click="show(repository)"></td>
+            <td ng-bind="repository.description"
+                ng-click="show(repository)"></td>
+            <!--
+            <td class="text-right w-25">
+
+                <button type="button"
+                        class="btn btn-primary btn-sm"
+                        ng-if="!repository.installed && !repository.promise.isPending()"
+                        ng-click="repository.promise = install(repository)"
+                        ng-translate=".INSTALL"></button>
+
+                <button type="button"
+                        class="btn btn-danger btn-sm"
+                        ng-if="repository.installed && !repository.promise.isPending()"
+                        ng-click="repository.promise = remove(repository)"
+                        ng-translate=".REMOVE"></button>
+
+                <div class="progress" ng-if="repository.promise.isPending()">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                        ng-progress="repository.promise"></div>
+                </div>
+            </td>
+            -->
+        </tr>
+    </tbody>
+</table>
+
+<script type="text/ng-template" id="repository.html">
+    <div class="modal-header">
+        <h3 class="modal-title" id="modal-title" ng-bind="repository.title"></h3>
+        <div class="d-flex flex-row justify-content-end align-items-center">
+            <h5 ng-bind="repository.owner.login" class="mb-0 mr-1"></h5>
+            <img ng-src="{{:: repository.owner.avatar_url }}" height="30px"/>
+        </div>
+    </div>
+    <div class="modal-body" id="modal-body">
+        <div ng-bind-html="repository.readme"></div>
+    </div>
+    <div class="modal-footer" ng-console>
+        <button type="button"
+                class="btn btn-primary"
+                ng-if="!repository.installed && !repository.promise.isPending()"
+                ng-click="repository.promise = install(repository)"
+                ng-translate=".INSTALL"></button>
+
+        <button type="button"
+                class="btn btn-danger"
+                ng-if="repository.installed && !repository.promise.isPending()"
+                ng-click="repository.promise = remove(repository)"
+                ng-translate=".REMOVE"></button>
+
+        <div class="progress w-100" ng-if="repository.promise.isPending()">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                ng-progress="repository.promise" ng-success="repository.installed = !repository.installed"></div>
+        </div>
+
+        <button class="btn btn-primary"
+                type="button"
+                ng-click="$close()"
+                ng-translate=".CLOSE"></button>
+    </div>
+</script>
