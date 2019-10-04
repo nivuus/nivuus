@@ -2,5 +2,6 @@
     "TITLE": "Application",
     "SHOW": "Voir plus",
     "INSTALL": "Installer",
-    "REMOVE": "Supprimer"
+    "REMOVE": "Supprimer",
+    "CLOSE": "Fermer"
 }

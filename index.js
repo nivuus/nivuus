@@ -5,11 +5,11 @@
  * Created by mallanic <maxime@allanic.me> at 07/08/2019
  */
 
-const Api = require('./api');
-const $logger = require('./api/service/utils/logger');
+const Api = require('./lib');
+const $logger = require('./lib/service/utils/logger');
 
 // Load main
-const $api = new Api(__dirname + '/data');
+const $api = new Api(process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + 'Library/Preferences' : process.env.HOME + "/.local/share") + '/nivuus');
 
 $api.load()
     .then(() => {

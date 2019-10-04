@@ -14,11 +14,13 @@ angular.module('default-app')
     })
     .directive('ngConsole', function () {
         return {
-            scope: {
-                ngConsole: '='
-            },
-            link: function ($scope) {
-                console.log($scope.ngConsole || $scope);
+            link: function ($scope, $element, $attr) {
+                if ($attr.ngConsole)
+                    $scope.$watch($attr.ngConsole, function (o) {
+                        console.log(o);
+                    });
+                else
+                    console.log($scope);
             }
         }
     })
@@ -52,7 +54,23 @@ angular.module('default-app')
             }
         };
     })
+    .directive('ngProgress', function () {
+        return {
+            restrict: 'A',
+            link: function ($scope, $element, $attr) {
+                $scope.$watch($attr.ngProgress, function (promise) {
+                    $element.css({
+                        width: '100%'
+                    });
+                    promise.then(function () {
+                        $scope.$eval($attr.ngSuccess);
+                    }, function (error) {
+                        $scope.$eval($attr.ngError);
+                    })
+                })
+            }
+        }
+    })
     .run(function ($rootScope, $window) {
         $rootScope.$window = $window;
-        console.log($window);
     });

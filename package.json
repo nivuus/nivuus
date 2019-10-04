@@ -9,6 +9,7 @@
   "author": "Maxime Allanic <maxime@allanic.me> (https://allanic.me)",
   "license": "ISC",
   "dependencies": {
+    "@octokit/rest": "^16.30.1",
     "@uirouter/angularjs": "^1.0.22",
     "angular": "^1.7.8",
     "angular-touch": "^1.7.8",
@@ -22,7 +23,7 @@
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "nodegit": "^0.26.2",
-    "q-native": "^1.0.1",
+    "q": "^1.5.1",
     "showdown": "^1.9.0",
     "socket.io": "^2.2.0",
     "system-installer": "^1.1.0",
