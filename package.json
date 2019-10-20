@@ -27,6 +27,7 @@
     "showdown": "^1.9.0",
     "socket.io": "^2.2.0",
     "system-installer": "^1.1.0",
-    "ui-bootstrap4": "^3.0.6"
+    "ui-bootstrap4": "^3.0.6",
+    "which": "^2.0.1"
   }
 }
