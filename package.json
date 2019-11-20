@@ -11,7 +11,7 @@
   "dependencies": {
     "@octokit/rest": "^16.30.1",
     "@uirouter/angularjs": "^1.0.22",
-    "angular": "^1.7.8",
+    "angular": "^1.7.9",
     "angular-touch": "^1.7.8",
     "aria2": "^4.0.3",
     "bootstrap": "^4.3.1",
