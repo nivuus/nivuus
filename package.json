@@ -19,7 +19,7 @@
     "express": "^4.17.1",
     "get-function-arguments": "^1.0.0",
     "glob": "^7.1.4",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "nodegit": "^0.26.2",
